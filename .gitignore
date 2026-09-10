@@ -1,0 +1,41 @@
+# Build output do CMake
+build/
+out/
+
+# Vcpkg (dependências instaladas - não versionar, cada máquina reinstala via manifest)
+vcpkg_installed/
+
+# Cache e arquivos gerados pelo CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+_deps/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.VC.opendb
+
+# Pastas de cache do IntelliSense/CMake do VS
+.vscode/
+out/build/
+out/install/
+
+# Binários compilados
+*.exe
+*.dll
+*.pdb
+*.lib
+*.obj
+*.ilk
+*.exp
+
+# Vcpkg (caso clone o vcpkg como submódulo/pasta dentro do repo — normalmente não é o caso)
+vcpkg/buildtrees/
+vcpkg/downloads/
+vcpkg/packages/
