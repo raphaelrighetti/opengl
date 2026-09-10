@@ -1,5 +1,8 @@
 {
-  "name": "meu-projeto",
+  "name": "opengl-tests",
   "version": "0.1.0",
-  "dependencies": []
+  "dependencies": [
+    "glew",
+    "glfw3"
+  ]
 }
