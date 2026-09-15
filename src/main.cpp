@@ -1,10 +1,13 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cmath>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <Windows.h>
+
+//int uniXmov{};
 
 std::string ReadFile(const char* path)
 {
@@ -18,23 +21,19 @@ std::string ReadFile(const char* path)
 
 	std::string content{ std::istreambuf_iterator<char>(file),
 		std::istreambuf_iterator<char>() };
+	std::cout << content << std::endl;
+	std::cout << content << std::endl;
 
 	file.close();
-	std::cout << content << std::endl;
-
-	std::cout << content << std::endl;
-
 	return content;
 }
 
 GLuint CreateProgram()
 {
-	std::string vsc{ ReadFile("../shaders/basic.vert") };
-	std::string fsc{ ReadFile("../shaders/basic.frag") };
+	std::string vsc{ ReadFile("../shaders/basic.vert").c_str() };
+	std::string fsc{ ReadFile("../shaders/basic.frag").c_str() };
 	const GLchar* vShaderCode[]{ vsc.c_str() };
 	const GLchar* fShaderCode[]{ fsc.c_str() };
-	std::cout << *vShaderCode << std::endl;
-	std::cout << *fShaderCode << std::endl;
 
 	GLuint program{ glCreateProgram() };
 
@@ -163,6 +162,12 @@ int main()
 
 	GLuint triangleVAO{ CreateTriangle()};
 	GLuint program{ CreateProgram() };
+	GLint uniXmov{ glGetUniformLocation(program, "xmov")};
+
+	bool triX_Direction{ true };
+	float triX_Offset{ 0.0f };
+	float triX_MaxOffset{ 0.7f };
+	float triX_Speed{ 0.0005f };
 
 	// Main loop
 	while (!glfwWindowShouldClose(window)) {
@@ -171,6 +176,20 @@ int main()
 			glfwSetWindowShouldClose(window, true);
 			std::cout << "ESC pressed, closing window.\n";
 		}
+
+		if (triX_Direction)
+		{
+			triX_Offset += triX_Speed;
+		}
+		else
+		{
+			triX_Offset -= triX_Speed;
+		}
+
+		if (abs(triX_Offset) >= triX_MaxOffset)
+			triX_Direction = !triX_Direction;
+
+		glUniform1f(uniXmov, triX_Offset);
 
 		// Render
 		glClearColor(0.1f, 0.15f, 0.2f, 1.0f);
