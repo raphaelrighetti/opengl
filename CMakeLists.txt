@@ -6,12 +6,14 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Use packages provided by vcpkg (configure CMake with the vcpkg toolchain)
-find_package(GLEW REQUIRED)
+find_package(glew REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(glm REQUIRED)
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp "src/utils/fs.cpp" "src/utils/fs.cpp" "src/utils/progman.cpp")
+
+file(COPY ${CMAKE_SOURCE_DIR}/src/shaders DESTINATION ${CMAKE_BINARY_DIR})
 if (TARGET glfw3::glfw)
 	target_link_libraries(${PROJECT_NAME} PRIVATE GLEW::GLEW glfw3::glfw OpenGL::GL glm::glm)
 elseif (TARGET glfw)

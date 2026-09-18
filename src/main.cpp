@@ -1,3 +1,6 @@
+#include "utils/fs.h"
+#include "utils/progman.h"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -5,82 +8,9 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <Windows.h>
-
-//int uniXmov{};
-
-std::string ReadFile(const char* path)
-{
-	std::ifstream file{ path };
-
-	if (!file.is_open())
-	{
-		std::cerr << "Arquivo não abriu..." << std::endl;
-		return "";
-	}
-
-	std::string content{ std::istreambuf_iterator<char>(file),
-		std::istreambuf_iterator<char>() };
-	std::cout << content << std::endl;
-	std::cout << content << std::endl;
-
-	file.close();
-	return content;
-}
-
-GLuint CreateProgram()
-{
-	std::string vsc{ ReadFile("../shaders/basic.vert").c_str() };
-	std::string fsc{ ReadFile("../shaders/basic.frag").c_str() };
-	const GLchar* vShaderCode[]{ vsc.c_str() };
-	const GLchar* fShaderCode[]{ fsc.c_str() };
-
-	GLuint program{ glCreateProgram() };
-
-	GLuint vShader{ glCreateShader(GL_VERTEX_SHADER) };
-	glShaderSource(vShader, 1, vShaderCode, nullptr);
-	GLuint fShader{ glCreateShader(GL_FRAGMENT_SHADER) };
-	glShaderSource(fShader, 1, fShaderCode, nullptr);
-
-	GLint success{};
-	GLchar log[1024]{};
-
-	glCompileShader(vShader);
-	glGetShaderiv(vShader, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(vShader, 1024, NULL, log);
-		std::cout << "Deu merda na vShader..." << std::endl;
-		std::cout << log << std::endl;
-		return 0;
-	}
-	glCompileShader(fShader);
-	glGetShaderiv(fShader, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(fShader, 1024, NULL, log);
-		std::cout << "Deu merda na fShader..." << std::endl;
-		std::cout << log << std::endl;
-		return 0;
-	}
-
-	glAttachShader(program, vShader);
-	glAttachShader(program, fShader);
-
-	glLinkProgram(program);
-	glGetProgramiv(program, GL_LINK_STATUS, &success);
-	if (!success)
-	{
-		glGetProgramInfoLog(program, 1024, NULL, log);
-		std::cout << "Falhou em linkar o program..." << std::endl;
-		std::cout << log << std::endl;
-	}
-
-	glDeleteShader(vShader);
-	glDeleteShader(fShader);
-
-	return program;
-}
 
 GLuint CreateTriangle()
 {
@@ -161,35 +91,24 @@ int main()
 	glViewport(0, 0, fbWidth, fbHeight);
 
 	GLuint triangleVAO{ CreateTriangle()};
-	GLuint program{ CreateProgram() };
-	GLint uniXmov{ glGetUniformLocation(program, "xmov")};
+	GLuint program
+	{
+		progman::CreateProgram("shaders/basic.vert", "shaders/basic.frag") 
+	};
 
-	bool triX_Direction{ true };
-	float triX_Offset{ 0.0f };
-	float triX_MaxOffset{ 0.7f };
-	float triX_Speed{ 0.0005f };
+	float xSpeed{ 0.005 };
+	glm::mat4 model{ 1.0f };
+	GLint uniModel{ glGetUniformLocation(program, "model") };
 
 	// Main loop
-	while (!glfwWindowShouldClose(window)) {
+	while (!glfwWindowShouldClose(window)) 
+	{
 		// Input: close on ESC
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		{
 			glfwSetWindowShouldClose(window, true);
 			std::cout << "ESC pressed, closing window.\n";
 		}
-
-		if (triX_Direction)
-		{
-			triX_Offset += triX_Speed;
-		}
-		else
-		{
-			triX_Offset -= triX_Speed;
-		}
-
-		if (abs(triX_Offset) >= triX_MaxOffset)
-			triX_Direction = !triX_Direction;
-
-		glUniform1f(uniXmov, triX_Offset);
 
 		// Render
 		glClearColor(0.1f, 0.15f, 0.2f, 1.0f);
@@ -197,6 +116,9 @@ int main()
 
 		glUseProgram(program);
 		glBindVertexArray(triangleVAO);
+
+		model = glm::translate(model, glm::vec3(0.0005f, 0.0f, 0.0f));
+		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
 
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
