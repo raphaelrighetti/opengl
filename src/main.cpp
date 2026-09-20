@@ -4,7 +4,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <cmath>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -90,15 +89,29 @@ int main()
 	glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
 	glViewport(0, 0, fbWidth, fbHeight);
 
-	GLuint triangleVAO{ CreateTriangle()};
+	GLuint triangleVAO{ CreateTriangle() };
 	GLuint program
 	{
 		progman::CreateProgram("shaders/basic.vert", "shaders/basic.frag") 
 	};
 
-	float xSpeed{ 0.005 };
-	glm::mat4 model{ 1.0f };
+	float xLimit{ 0.7f };
+	float xSpeed{ 0.0005f };
+	float xCurrValue{ 0.0f };
+
+	float rotationAngle{ 0.0f };
+	float rotationAmount{ 0.01f };
+
+	float scaleMax{ 0.8f }, scaleMin{ 0.1 };
+	float scaleCurrent{ scaleMin };
+	float scaleAmount{ 0.0001f };
+
+	float colorMin{ 0.0f }, colorMax{ 1.0f };
+	float colorCurrent{ 0.0f };
+	float colorAmount{ 0.0001f };
+	
 	GLint uniModel{ glGetUniformLocation(program, "model") };
+	GLint uniCppColor{ glGetUniformLocation(program, "cppColor") };
 
 	// Main loop
 	while (!glfwWindowShouldClose(window)) 
@@ -117,8 +130,51 @@ int main()
 		glUseProgram(program);
 		glBindVertexArray(triangleVAO);
 
-		model = glm::translate(model, glm::vec3(0.0005f, 0.0f, 0.0f));
+		if (xCurrValue >= xLimit)
+		{
+			xSpeed = -std::abs(xSpeed);
+		}
+		else if (xCurrValue <= -xLimit)
+		{
+			xSpeed = std::abs(xSpeed);
+		}
+
+		if (rotationAngle >= 360)
+		{
+			rotationAngle -= 360;
+		}
+
+		if (scaleCurrent >= scaleMax)
+		{
+			scaleAmount = -std::abs(scaleAmount);
+		}
+		else if (scaleCurrent <= scaleMin)
+		{
+			scaleAmount = std::abs(scaleAmount);
+		}
+
+		if (colorCurrent >= colorMax)
+		{
+			colorAmount = -std::abs(colorAmount);
+		}
+		else if (colorCurrent <= colorMin)
+		{
+			colorAmount = std::abs(colorAmount);
+		}
+
+		xCurrValue += xSpeed;
+		rotationAngle += rotationAmount;
+		scaleCurrent += scaleAmount;
+		colorCurrent += colorAmount;
+
+		glm::mat4 model{ 1.0f };
+		model = glm::translate(model, glm::vec3(xCurrValue, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(rotationAngle), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(scaleCurrent, scaleCurrent, 1.0));
+		glm::vec3 cppColor{ colorCurrent };
+
 		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3fv(uniCppColor, 1, glm::value_ptr(cppColor));
 
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
