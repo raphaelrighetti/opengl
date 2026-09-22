@@ -11,28 +11,52 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <Windows.h>
 
-GLuint CreateTriangle()
+struct Data
 {
-	GLfloat vertices[]{
-		-1.0, -1.0, 0.0,
-		1.0, -1.0, 0.0,
-		0.0, 1.0, 0.0
+	GLuint VAO, VBO, EBO;
+};
+
+Data CreateTriangle()
+{
+	GLuint elements[]{
+		0, 2, 3,
+		1, 2, 3,
+		0, 2, 4,
+		1, 2, 4,
+		0, 1, 3,
+		0, 1, 4
 	};
 
-	GLuint VAO, VBO;
+	GLfloat vertices[]{
+		// X esquerda 0
+		-1.0f, -1.0f, 0.0f,
+		// X direita 1
+		1.0f, -1.0f, 0.0f,
+		// Y cima 2
+		0.0f, 1.0f, 0.0f,
+		// Z frente 3
+		0.0f, -1.0f, 1.0f,
+		// Z trás 4
+		0.0f, -1.0f, -1.0f
+	};
 
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
+	Data data{};
 
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glGenVertexArrays(1, &data.VAO);
+	glBindVertexArray(data.VAO);
 
+	glGenBuffers(1, &data.VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, data.VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &data.EBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
 
-	return VAO;
+	return data;
 }
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -89,7 +113,7 @@ int main()
 	glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
 	glViewport(0, 0, fbWidth, fbHeight);
 
-	GLuint triangleVAO{ CreateTriangle() };
+	Data data{ CreateTriangle() };
 	GLuint program
 	{
 		progman::CreateProgram("shaders/basic.vert", "shaders/basic.frag") 
@@ -100,7 +124,7 @@ int main()
 	float xCurrValue{ 0.0f };
 
 	float rotationAngle{ 0.0f };
-	float rotationAmount{ 0.01f };
+	float rotationAmount{ 0.05f };
 
 	float scaleMax{ 0.8f }, scaleMin{ 0.1 };
 	float scaleCurrent{ scaleMin };
@@ -110,8 +134,13 @@ int main()
 	float colorCurrent{ 0.0f };
 	float colorAmount{ 0.0001f };
 	
+	glEnable(GL_DEPTH_TEST);
+
 	GLint uniModel{ glGetUniformLocation(program, "model") };
-	GLint uniCppColor{ glGetUniformLocation(program, "cppColor") };
+	GLint uniProjection{ glGetUniformLocation(program, "projection") };
+
+	glm::mat4 projection{ glm::perspective(90.0f, (GLfloat)fbWidth / (GLfloat)fbHeight,
+		0.1f, 100.0f) };
 
 	// Main loop
 	while (!glfwWindowShouldClose(window)) 
@@ -125,10 +154,9 @@ int main()
 
 		// Render
 		glClearColor(0.1f, 0.15f, 0.2f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(program);
-		glBindVertexArray(triangleVAO);
 
 		if (xCurrValue >= xLimit)
 		{
@@ -168,15 +196,23 @@ int main()
 		colorCurrent += colorAmount;
 
 		glm::mat4 model{ 1.0f };
-		model = glm::translate(model, glm::vec3(xCurrValue, 0.0f, 0.0f));
-		model = glm::rotate(model, glm::radians(rotationAngle), glm::vec3(0.0f, 0.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(scaleCurrent, scaleCurrent, 1.0));
-		glm::vec3 cppColor{ colorCurrent };
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
+		model = glm::rotate(model, glm::radians(rotationAngle), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(scaleCurrent, scaleCurrent, scaleCurrent));
 
 		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
-		glUniform3fv(uniCppColor, 1, glm::value_ptr(cppColor));
+		glUniformMatrix4fv(uniProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(data.VAO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.EBO);
+
+		glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
+
+		/*glDrawArrays(GL_TRIANGLES, 0, 3);*/
+
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 		// Swap buffers and poll events
 		glfwSwapBuffers(window);
