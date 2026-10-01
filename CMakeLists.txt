@@ -11,7 +11,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(glm REQUIRED)
 
-add_executable(${PROJECT_NAME} src/main.cpp "src/utils/fs.cpp" "src/utils/fs.cpp" "src/utils/progman.cpp")
+add_executable(${PROJECT_NAME} src/main.cpp "src/utils/fs.cpp" "src/utils/fs.cpp" "src/classes/Mesh.cpp" "src/classes/Shader.cpp" "src/classes/Window.cpp")
 
 file(COPY ${CMAKE_SOURCE_DIR}/src/shaders DESTINATION ${CMAKE_BINARY_DIR})
 if (TARGET glfw3::glfw)

@@ -1,17 +1,28 @@
-#include "progman.h"
-#include "fs.h"
+#include "Shader.h"
+#include "../utils/fs.h"
 
-#include <string>
-#include <iostream>
+Shader::Shader()
+{
+	programID = 0;
+	uniModel = 0;
+	uniProjection = 0;
+}
 
-GLuint progman::CreateProgram(const char* vShaderPath, const char* fShaderPath)
+Shader::Shader(const char* vShaderPath, const char* fShaderPath)
+{
+	programID = 0;
+	uniModel = 0;
+	uniProjection = 0;
+}
+
+void Shader::CreateProgram(const char* vShaderPath, const char* fShaderPath)
 {
 	std::string vsc{ fs::ReadFile(vShaderPath) };
 	std::string fsc{ fs::ReadFile(fShaderPath) };
 	const GLchar* vShaderCode[]{ vsc.c_str() };
 	const GLchar* fShaderCode[]{ fsc.c_str() };
 
-	GLuint program{ glCreateProgram() };
+	programID = glCreateProgram();
 
 	GLuint vShader{ glCreateShader(GL_VERTEX_SHADER) };
 	glShaderSource(vShader, 1, vShaderCode, nullptr);
@@ -30,8 +41,8 @@ GLuint progman::CreateProgram(const char* vShaderPath, const char* fShaderPath)
 		std::cout << log << std::endl;
 		glDeleteShader(vShader);
 		glDeleteShader(fShader);
-		glDeleteProgram(program);
-		return 0;
+		glDeleteProgram(programID);
+		return;
 	}
 	glCompileShader(fShader);
 	glGetShaderiv(fShader, GL_COMPILE_STATUS, &success);
@@ -42,28 +53,62 @@ GLuint progman::CreateProgram(const char* vShaderPath, const char* fShaderPath)
 		std::cout << log << std::endl;
 		glDeleteShader(vShader);
 		glDeleteShader(fShader);
-		glDeleteProgram(program);
-		return 0;
+		glDeleteProgram(programID);
+		return;
 	}
 
-	glAttachShader(program, vShader);
-	glAttachShader(program, fShader);
+	glAttachShader(programID, vShader);
+	glAttachShader(programID, fShader);
 
-	glLinkProgram(program);
-	glGetProgramiv(program, GL_LINK_STATUS, &success);
+	glLinkProgram(programID);
+	glGetProgramiv(programID, GL_LINK_STATUS, &success);
 	if (!success)
 	{
-		glGetProgramInfoLog(program, 1024, nullptr, log);
+		glGetProgramInfoLog(programID, 1024, nullptr, log);
 		std::cout << "Falhou em linkar o program..." << std::endl;
 		std::cout << log << std::endl;
 		glDeleteShader(vShader);
 		glDeleteShader(fShader);
-		glDeleteProgram(program);
-		return 0;
+		glDeleteProgram(programID);
+		return;
 	}
 
 	glDeleteShader(vShader);
 	glDeleteShader(fShader);
 
-	return program;
+	uniModel = glGetUniformLocation(programID, "model");
+	uniProjection = glGetUniformLocation(programID, "projection");
+}
+
+void Shader::UseProgram()
+{
+	glUseProgram(programID);
+}
+
+void Shader::ClearProgram()
+{
+	if (programID != 0)
+	{
+		glDeleteProgram(programID);
+		programID = 0;
+	}
+
+	programID = 0;
+	uniModel = 0;
+	uniProjection = 0;
+}
+
+GLuint Shader::GetUniModel()
+{
+	return uniModel;
+}
+
+GLuint Shader::GetUniProjection()
+{
+	return uniProjection;
+}
+
+Shader::~Shader()
+{
+	ClearProgram();
 }
